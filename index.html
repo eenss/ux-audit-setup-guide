@@ -302,6 +302,41 @@
     .btn-skip:hover { color: var(--text-secondary); }
 
     /* OS picker (special first card) */
+    .path-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .path-option:hover { border-color: var(--accent); background: var(--accent-light); }
+    .path-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .path-text {
+      flex: 1;
+    }
+    .path-title {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+    .path-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .path-arrow {
+      color: var(--text-muted);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
     .os-options-row {
       display: flex;
       gap: 12px;
@@ -712,6 +747,7 @@
   </div>
 
   <script>
+    let mode = null; // null = landing, 'setup' = first time, 'restart' = returning
     let os = null;
     let currentStep = 0;
 
@@ -973,17 +1009,55 @@
     }
 
     function render() {
+      _render();
+      // Always populate help FAQ regardless of state
+      document.getElementById('fab-container').style.display = '';
+      document.getElementById('help-panel-body').innerHTML = renderHelpFaq();
+      // Re-trigger card animation
+      const card = document.querySelector('.card');
+      if (card) { card.style.animation = 'none'; card.offsetHeight; card.style.animation = ''; }
+    }
+
+    function _render() {
       const el = document.getElementById('card-content');
 
-      // OS picker
-      if (os === null) {
+      // Landing page: choose path
+      if (mode === null) {
         el.innerHTML = `
           <div class="card-top">
-            <div class="step-title">Welcome! Let's get you set up.</div>
+            <div class="step-title">What would you like to do?</div>
           </div>
           <div class="card-body">
-            <p>This tool captures screenshots of OTA booking flows automatically. It runs on your own computer. The setup takes about 5 minutes.</p>
-            <p style="font-weight: 600; color: var(--text); margin-top: 16px; margin-bottom: 12px;">What computer are you using?</p>
+            <div class="path-option" onclick="startSetup()">
+              <div class="path-icon">&#128230;</div>
+              <div class="path-text">
+                <div class="path-title">Set up for the first time</div>
+                <div class="path-desc">Install the tool on your computer. Takes about 5 minutes.</div>
+              </div>
+              <div class="path-arrow">&rsaquo;</div>
+            </div>
+            <div class="path-option" onclick="startRestart()">
+              <div class="path-icon">&#128260;</div>
+              <div class="path-text">
+                <div class="path-title">Restart the tool</div>
+                <div class="path-desc">Already set up before, but the tool is not running.</div>
+              </div>
+              <div class="path-arrow">&rsaquo;</div>
+            </div>
+          </div>
+          <div class="card-footer"></div>
+        `;
+        return;
+      }
+
+      // OS picker (shared by setup and restart)
+      if (os === null) {
+        const title = mode === 'setup' ? "What computer are you using?" : "What computer are you using?";
+        el.innerHTML = `
+          <div class="card-top">
+            <div class="step-title">${title}</div>
+          </div>
+          <div class="card-body">
             <div class="os-options-row">
               <div class="os-option" onclick="pickOS('mac')">
                 <div class="os-icon">&#128187;</div>
@@ -995,8 +1069,51 @@
               </div>
             </div>
           </div>
-          <div class="card-footer" style="flex-direction: column; gap: 0;">
-            <a href="http://localhost:3200" style="font-size: 13px; color: var(--text-muted); text-decoration: none; padding: 8px 0;">Already set up? Open the screenshot tool &rarr;</a>
+          <div class="card-footer">
+            <button class="btn-back" onclick="goHome()">Back</button>
+          </div>
+        `;
+        return;
+      }
+
+      // Restart flow
+      if (mode === 'restart') {
+        const restartBody = os === 'mac' ? `
+          <ol>
+            <li>Open <strong>Terminal</strong> (press <strong>Command + Space</strong>, type <strong>Terminal</strong>, press Enter).</li>
+            <li>Type <code>cd</code> followed by a space. <strong>Don't press Enter yet.</strong></li>
+            <li>Open <strong>Finder</strong>, find the <strong>ux-audit-tool-main</strong> folder, and <strong>drag it</strong> into the Terminal window.</li>
+            <li>Press <strong>Enter</strong>.</li>
+            <li>Copy and paste this command, then press Enter:</li>
+          </ol>
+          <div class="cmd-block">
+            <span class="cmd-text">bash start.sh</span>
+            <button class="copy-btn" onclick="copyText(this, 'bash start.sh')">Copy</button>
+          </div>
+          <p>You should see: <code>UX Audit Tool running at http://localhost:3200</code></p>
+        ` : `
+          <ol>
+            <li>Open the <strong>ux-audit-tool-main</strong> folder.</li>
+            <li>Find the file called <strong>start.bat</strong> and <strong>double-click</strong> it.</li>
+            <li>A black window will appear. Keep it open.</li>
+          </ol>
+          <p>You should see: <code>UX Audit Tool running at http://localhost:3200</code></p>
+        `;
+
+        el.innerHTML = `
+          <div class="card-top">
+            <div class="step-title">Restart the tool (${os === 'mac' ? 'Mac' : 'Windows'})</div>
+          </div>
+          <div class="card-body">
+            ${restartBody}
+            <div class="callout callout--success" style="margin-top: 14px;">
+              When it's running, open your browser and go to:<br>
+              <strong style="font-size: 15px;">http://localhost:3200</strong>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="btn-back" onclick="os = null; render()">Back</button>
+            <a class="btn-done" href="http://localhost:3200" style="text-decoration: none; text-align: center;">Open the screenshot tool</a>
           </div>
         `;
         return;
@@ -1038,15 +1155,23 @@
         <div class="card-footer">${footerHtml}</div>
       `;
 
-      // Always show FABs
-      document.getElementById('fab-container').style.display = '';
-      document.getElementById('help-panel-body').innerHTML = renderHelpFaq();
+    }
 
-      // Re-trigger animation
-      const card = document.querySelector('.card');
-      card.style.animation = 'none';
-      card.offsetHeight;
-      card.style.animation = '';
+    function startSetup() {
+      mode = 'setup';
+      render();
+    }
+
+    function startRestart() {
+      mode = 'restart';
+      render();
+    }
+
+    function goHome() {
+      mode = null;
+      os = null;
+      currentStep = 0;
+      render();
     }
 
     function pickOS(selected) {
