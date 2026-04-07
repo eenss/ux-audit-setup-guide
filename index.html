@@ -1264,7 +1264,10 @@
       const type = document.getElementById('sg-fb-type').value;
       const message = document.getElementById('sg-fb-message').value;
       try {
-        await fetch('http://localhost:3200/api/feedback', {
+        // If served from localhost, use relative URL. If from GitHub Pages, try localhost as fallback.
+        const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        const baseUrl = isLocal ? '' : 'http://localhost:3200';
+        await fetch(baseUrl + '/api/feedback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
