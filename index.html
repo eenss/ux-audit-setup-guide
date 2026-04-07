@@ -477,10 +477,10 @@
     /* Floating panels */
     .float-panel {
       position: fixed;
-      bottom: 130px;
+      bottom: 150px;
       right: 24px;
       width: 380px;
-      max-height: calc(100vh - 160px);
+      max-height: calc(100vh - 180px);
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
@@ -700,10 +700,10 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span>Need help?</span>
     </button>
-    <button type="button" class="fab fab--feedback" id="fab-feedback">
+    <a class="fab fab--feedback" href="https://docs.google.com/forms/d/e/1FAIpQLSef0H210BPj5cf6zLjvBTh7P7kqNZ83NnkHSWRitfHEqbgytA/viewform?usp=header" target="_blank" style="text-decoration:none;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       <span>Feedback</span>
-    </button>
+    </a>
   </div>
 
   <!-- Help floating panel -->
@@ -717,32 +717,6 @@
     <div class="float-panel-body" id="help-panel-body"></div>
   </div>
 
-  <!-- Feedback floating panel -->
-  <div class="float-panel float-panel--feedback" id="float-feedback">
-    <div class="float-panel-header">
-      <h3>Feedback</h3>
-      <button type="button" class="float-panel-close" id="float-feedback-close">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="float-panel-body">
-      <form class="sg-feedback-form" id="sg-feedback-form">
-        <input type="text" id="sg-fb-name" placeholder="Your name (optional)" class="sg-fb-input">
-        <select id="sg-fb-type" class="sg-fb-input">
-          <option value="setup">Setup issue</option>
-          <option value="bug">Bug</option>
-          <option value="suggestion">Suggestion</option>
-          <option value="question">Question</option>
-        </select>
-        <textarea id="sg-fb-message" placeholder="Describe the issue or suggestion..." rows="3" class="sg-fb-input" required></textarea>
-        <div class="sg-fb-footer">
-          <span class="sg-fb-hint">We'll look into it.</span>
-          <button type="submit" class="sg-fb-submit">Submit</button>
-        </div>
-      </form>
-      <div id="sg-fb-success" class="sg-fb-success" style="display:none;">Thanks! Your feedback has been submitted.</div>
-    </div>
-  </div>
     </div>
   </div>
 
@@ -1211,15 +1185,11 @@
 
     // ---- FAB panel logic ----
     const fabHelp = document.getElementById('fab-help');
-    const fabFeedback = document.getElementById('fab-feedback');
     const floatHelp = document.getElementById('float-help');
-    const floatFeedback = document.getElementById('float-feedback');
 
     function closeAllPanels() {
       floatHelp.classList.remove('open');
-      floatFeedback.classList.remove('open');
       fabHelp.classList.remove('active');
-      fabFeedback.classList.remove('active');
     }
 
     fabHelp.addEventListener('click', () => {
@@ -1228,14 +1198,7 @@
       if (!wasOpen) { floatHelp.classList.add('open'); fabHelp.classList.add('active'); }
     });
 
-    fabFeedback.addEventListener('click', () => {
-      const wasOpen = floatFeedback.classList.contains('open');
-      closeAllPanels();
-      if (!wasOpen) { floatFeedback.classList.add('open'); fabFeedback.classList.add('active'); }
-    });
-
     document.getElementById('float-help-close').addEventListener('click', closeAllPanels);
-    document.getElementById('float-feedback-close').addEventListener('click', closeAllPanels);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllPanels(); });
 
     function renderHelpFaq() {
@@ -1257,37 +1220,6 @@
         </details>`).join('')}</div>`;
     }
 
-    // Feedback form submission
-    document.getElementById('sg-feedback-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('sg-fb-name').value;
-      const type = document.getElementById('sg-fb-type').value;
-      const message = document.getElementById('sg-fb-message').value;
-      try {
-        // If served from localhost, use relative URL. If from GitHub Pages, try localhost as fallback.
-        const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-        const baseUrl = isLocal ? '' : 'http://localhost:3200';
-        await fetch(baseUrl + '/api/feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: name || 'Anonymous',
-            type: type,
-            message: '[Setup Guide] ' + message,
-          }),
-        });
-        document.getElementById('sg-fb-message').value = '';
-        document.getElementById('sg-fb-name').value = '';
-        document.getElementById('sg-fb-success').style.display = '';
-        document.getElementById('sg-feedback-form').style.display = 'none';
-        setTimeout(() => {
-          document.getElementById('sg-fb-success').style.display = 'none';
-          document.getElementById('sg-feedback-form').style.display = '';
-        }, 4000);
-      } catch {
-        alert('Could not send feedback. Make sure the tool is running on localhost:3200.');
-      }
-    });
   </script>
 </body>
 </html>
